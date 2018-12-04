@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html class="no-js"> <!--<![endif]-->
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Lato|Russo+One" rel="stylesheet">
+    <link rel="stylesheet" href="main.css">
+  </head>
+  <body>
+    <header class="game-menu hidden">
+      <h1 class="game-menu__title">Tanks</h1>
+      <nav class="game-menu__navigation">
+        <ol class="navigation">
+          <li>Nowa Gra</li>
+          <li>Zasady</li>
+        </ol>
+      </nav>
+    </header>
+    <main class="game">
+
+      <div class="container">
+        <h2 class="board-name">Twoja plansza</h2>
+        <div class="game__board" id="player-board"></div>
+      </div>
+
+      <div class="container hidden">
+        <h2 class="board-name">Plansza przeciwnika</h2>
+        <div class="game__board" id="computer-board"></div>
+      </div>
+
+      <div class="game__settings-board">
+        <p>Pozostało czołgów: <span>9</span></p>
+        <p>Kliknij na dowolne nie zajęte pole na planszy aby ustawić czołg</p>
+      </div>
+    </main>
+    <script src="app.js"></script>
+  </body>
+</html>
