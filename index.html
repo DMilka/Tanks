@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="main.css">
   </head>
   <body>
-    <header class="game-menu ">
+    <header class="game-menu">
       <h1 class="game-menu__title">Tanks</h1>
       <nav class="game-menu__navigation">
         <ol class="navigation">
@@ -32,10 +32,17 @@
       </div>
 
       <div class="game__settings-board">
-        <p>Pozostało czołgów: <span>9</span></p>
+        <p>Pozostało czołgów: <span id="tanks-counter">7</span></p>
         <p>Kliknij na dowolne nie zajęte pole na planszy aby ustawić czołg</p>
       </div>
     </main>
+
+    <section class="winner-container hidden"> 
+      <div class="winner-box">
+        <h1 class="winner-title">Computer wygrał!</h1>
+        <button class="new-game-btn" id="restart-game-btn">Nowa gra</button>
+      </div>
+    </section>
     <script src="app.js"></script>
   </body>
 </html>

@@ -12,7 +12,9 @@ const tanksController = (function() {
 
   let boardData = {
     playerBoard: [],
-    computerBoard: []
+    computerBoard: [],
+    playerTanksDestroyed: 0,
+    computerTanksDestroyed: 0
   };
 
   return {
@@ -23,6 +25,13 @@ const tanksController = (function() {
     
     getBoardData: function() {
       return boardData;
+    },
+
+    resetBoardData: function() {
+      boardData.playerBoard = [];
+      boardData.computerBoard = [];
+      boardData.playerTanksDestroyed = 0;
+      boardData.computerTanksDestroyed = 0;
     },
 
 
@@ -97,7 +106,11 @@ const UIController = (function() {
     gameStartBtn: '#game-start-btn',
     container: '.container',
     gameSettings: '.game__settings-board',
-    boardElement: '.board-element'
+    boardElement: '.board-element',
+    restartGame: '#restart-game-btn',
+    winnerContainer: '.winner-container',
+    winnerTitle: '.winner-title',
+    tanksCounter: '#tanks-counter'
   }
 
   return {
@@ -148,9 +161,56 @@ const UIController = (function() {
       containers[1].classList.toggle('hidden');
 
       document.querySelector(DOMstrings.gameSettings).classList.toggle('hidden');
-      document.querySelector(DOMstrings.playerBoard).id = "player-board-complete";
+      document.querySelector(DOMstrings.playerBoard).classList.toggle('default');
       document.querySelector(DOMstrings.computerBoard).classList.toggle('enemy-board-ready');
+    },
+
+    showShotInUI: function(item, hit) {
+      if(hit === 1) {
+        document.querySelector('#'+item).classList.add('hit');
+      } else if (hit === 0) {
+        document.querySelector('#'+item).classList.add('miss');
+      }
+    },
+
+    showWinner: function(winner) {
+      document.querySelector(DOMstrings.winnerTitle).textContent = winner + " wygrał!";
+      document.querySelector(DOMstrings.winnerContainer).classList.toggle('hidden');
+    },
+
+    restartGameUI: function() {
+      let playerBrd = document.querySelector(DOMstrings.playerBoard);
+      let enemyBrd = document.querySelector(DOMstrings.computerBoard);
+
+      document.querySelector(DOMstrings.winnerContainer).classList.toggle('hidden');
+      document.querySelector(DOMstrings.gameSettings).classList.toggle('hidden');
+      document.querySelector(DOMstrings.computerBoard).classList.toggle('enemy-board-ready');
+      document.querySelectorAll(DOMstrings.container)[1].classList.toggle('hidden');
+      document.querySelector(DOMstrings.playerBoard).classList.toggle('default');
+
+      while (playerBrd.firstChild) {
+        playerBrd.removeChild(playerBrd.firstChild);
+      }
+
+      while (enemyBrd.firstChild) {
+        enemyBrd.removeChild(enemyBrd.firstChild);
+      }
+    },
+
+    upgradeCounter: function(dataLength) {
+      let counter = 7;
+      counter = counter - dataLength;
+      document.querySelector(DOMstrings.tanksCounter).textContent = counter;
+    },
+
+    getBoardElement: function(x,y) {
+      let element;
+
+      element = document.querySelector('#player_board-'+x+'-'+y);
+
+      return element;
     }
+
   };
 })();
 
@@ -164,7 +224,11 @@ const controller = (function(tanksCtrl, UICtrl) {
     const DOM = UICtrl.getDOMelemenets();
     document.querySelector(DOM.gameStartBtn).addEventListener('click', startGame);
 
+    document.querySelector(DOM.restartGame).addEventListener('click', restartGame);
+
     document.querySelector(DOM.playerBoard).addEventListener('click', placeTanks);
+
+    document.querySelector(DOM.computerBoard).addEventListener('click', shot);
   };
 
   let putTank = function(e, boardData) {
@@ -204,8 +268,9 @@ const controller = (function(tanksCtrl, UICtrl) {
 
       if(!isNaN(x) && !isNaN(y) && !isNaN(placedX) && !isNaN(placedY)) {
         if(validated) {
-          tanksCtrl.setPlayerTank(1, x, y);
+          tanksCtrl.setPlayerTank(boardData.playerBoard.length, x, y);
           UICtrl.placeTankInUI(item);
+          UICtrl.upgradeCounter(boardData.playerBoard.length);
         }
       }
   };
@@ -226,21 +291,107 @@ const controller = (function(tanksCtrl, UICtrl) {
     }
   };
 
+  let computerShot = function() {
+    let x,y, computerBoardItem, validatedBoardItem = false, item, boardData, miss = true;
+    // 1. Generuj wspolrzedne x,y
+    do {
+      x = Math.floor(Math.random() * 10);
+      y = Math.floor(Math.random() * 10);  
+
+      // 2. Sprawdz czy wczesniej nie padl juz strzal na wybranych wspolrzednych 
+        // 2.1 Pobierz diva o wygenerowanych wspolrzednych
+        computerBoardItem = UICtrl.getBoardElement(x,y);
+        // 2.2 Sprawdz czy div ten zawiera klasy miss lub hit
+        if(!computerBoardItem.classList.contains('miss') && !computerBoardItem.classList.contains('hit')) {
+           // 2.3 Jesli zawiera wroc do punktu 1
+           //     Jesli nie zawiera przejdz do punktu 3
+          validatedBoardItem = true;
+        }
+    } while(validatedBoardItem === false);
+     
+    item = computerBoardItem.id;
+    boardData = tanksCtrl.getBoardData();
+
+    // 3. Dodaj klase miss lub hit w zaleznosci od trafienia
+      // 3.1 Jesli hit dodaj informacje o trafieniiu do strukury danych
+      for (let i = 0; i < boardData.playerBoard.length; i++) {
+        if(boardData.playerBoard[i].x === x && boardData.playerBoard[i].y === y) {
+          boardData.playerTanksDestroyed++;
+          UICtrl.showShotInUI(item, 1);
+          miss = false;
+          break;
+        } 
+      }
+  
+      if(boardData.playerTanksDestroyed === 7) {
+        UICtrl.showWinner("Computer");
+      } 
+  
+      if(miss) {
+        UICtrl.showShotInUI(item, 0);
+      }
+     
+  };
+
+
+  let shot = function(e) {
+    let item, dividedItem, x, y, boardData, miss = true;
+
+    if(!e.target.classList.contains('miss') && !e.target.classList.contains('hit')) {
+      boardData = tanksCtrl.getBoardData();
+      item = e.target.id;
+      dividedItem = item.split('-');
+      x = parseInt(dividedItem[1]);
+      y = parseInt(dividedItem[2]);
+  
+      if(dividedItem[0] === 'computer_board') {
+        for (let i = 0; i < boardData.computerBoard.length; i++) {
+          if(boardData.computerBoard[i].x === x && boardData.computerBoard[i].y === y) {
+            boardData.computerTanksDestroyed++;
+            UICtrl.showShotInUI(item, 1);
+            miss = false;
+            break;
+          } 
+        }
+    
+        if(boardData.computerTanksDestroyed === 7) {
+          UICtrl.showWinner("Player");
+        } 
+    
+        if(miss) {
+          UICtrl.showShotInUI(item, 0);
+        }
+        setTimeout(computerShot, 800);
+        
+      }
+    }
+  };
+
+  
+
+
   let startGame = function() {
     // 1. Wygeneruj plansze i pokaz je
     UICtrl.createBoards();
-    UICtrl.showPlayerSettingBoard();
-    tanksCtrl.fillEnemyBoard();
+   
+    
 
     // // 2. Popros gracza o ustawienie czolgów
-    // tanksCtrl.setPlayerTanks();
+    UICtrl.showPlayerSettingBoard();
 
     // // 3. Ustaw czolgi przeciwnika 
-    // tanksCtrl.setComputerTanks();
+    tanksCtrl.fillEnemyBoard();
 
     // // 4. Pokaz obie planszei ukryj instrukcje
     // UICtrl.showEnemyBoard();
   };
+
+
+  let restartGame = function() {
+    UICtrl.restartGameUI();
+    tanksCtrl.resetBoardData();
+    startGame();
+  }
 
   return {
     init: function() {
